@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angiras - Human Rights Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #10a37f;
+            --primary-dark: #0d8c6d;
+            --bg-color: #ffffff;
+            --sidebar-bg: #202123;
+            --chat-bg: #f7f7f8;
+            --message-user-bg: #000000;  /* user bubble */
+            --message-bot-bg: #e5e7eb;   /* bot bubble */
+            --text-color: #343541;
+            --text-secondary: #6e6e80;
+            --border-color: #e5e5e7;
+            --shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        .dark-mode {
+            --primary-color: #10a37f;
+            --primary-dark: #0d8c6d;
+            --bg-color: #343541;
+            --sidebar-bg: #202123;
+            --chat-bg: #444654;
+            --message-user-bg: #000000;
+            --message-bot-bg: #3b3d4a;
+            --text-color: #ececf1;
+            --text-secondary: #acacbe;
+            --border-color: #565869;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            height: 100vh;
+            /* allow scrolling so input bar is always reachable on desktop */
+            overflow: auto;
+            transition: var(--transition);
+        }
+
+        /* Main Layout */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 80%;
+            max-width: 320px;
+            background-color: var(--sidebar-bg);
+            color: #ececf1;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            position: relative;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #4d4d4f;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            /* remove gradient so your ai.png controls the look */
+            background: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .logo-circle img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .logo-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 0;
+        }
+
+        .new-chat-btn {
+            width: calc(100% - 32px);
+            margin: 8px 16px;
+            padding: 12px;
+            background-color: #3e3f4b;
+            border: 1px solid #565869;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+
+        .new-chat-btn:hover {
+            background-color: #4e4f5b;
+        }
+
+        .chat-history {
+            margin-top: 16px;
+        }
+
+        .chat-history-title {
+            padding: 8px 20px;
+            font-size: 0.85rem;
+            color: #8e8ea0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-history-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: var(--transition);
+        }
+
+        .chat-history-item:hover {
+            background-color: #2a2b32;
+        }
+
+        .chat-history-item.active {
+            background-color: #343541;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid #4d4d4f;
+        }
+
+        .menu-item {
+            padding: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            border-radius: 6px;
+            padding-left: 10px;
+        }
+
+        .menu-item:hover {
+            background-color: #2a2b32;
+        }
+
+        /* Main Chat Area */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--chat-bg);
+            position: relative;
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--bg-color);
+        }
+
+        .chat-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* MESSAGE LAYOUT */
+
+        .message {
+            display: flex;
+            gap: 16px;
+            max-width: 48rem;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .bot-message {
+            justify-content: flex-start;
+        }
+
+        .user-message {
+            justify-content: flex-end;
+            gap: 0; /* no empty space on right */
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        /* Bot avatar uses your ai.png as a clean circle */
+        .bot-message .message-avatar {
+            background: none;
+        }
+
+        .message-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* Hide sender icon completely */
+        .user-message .message-avatar {
+            display: none;
+        }
+
+        /* Bubble */
+        .message-content {
+            flex: 0 1 auto;
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            /* keep all list content, bullets, etc strictly inside bubble */
+            overflow: hidden;
+            background-clip: padding-box;
+        }
+
+        .user-message .message-content {
+            background-color: var(--message-user-bg);
+            color: #ffffff;
+        }
+
+        .bot-message .message-content {
+            background-color: var(--message-bot-bg);
+            color: var(--text-color);
+        }
+
+        .message-text {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .message-text p {
+            margin-bottom: 12px;
+        }
+
+        .message-text ul, .message-text ol {
+            margin-left: 20px;
+            margin-bottom: 12px;
+        }
+
+        .message-text li {
+            margin-bottom: 4px;
+        }
+
+        .message-text h3, .message-text h4 {
+            margin: 16px 0 8px 0;
+            color: var(--text-color);
+        }
+
+        /* Green capability / legal reference box */
+        .legal-reference {
+            background-color: rgba(16, 163, 127, 0.08);
+            border-left: 4px solid var(--primary-color);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .case-law-box {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 12px 0;
+            font-size: 0.9rem;
+        }
+
+        .case-law-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .input-container {
+            padding: 24px;
+            background-color: var(--bg-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .input-wrapper {
+            max-width: 48rem;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .input-box {
+            width: 100%;
+            padding: 16px 52px 16px 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+            resize: none;
+            min-height: 56px;
+            max-height: 200px;
+            line-height: 1.5;
+            transition: var(--transition);
+        }
+
+        .input-box:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.1);
+        }
+
+        .send-btn {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .send-btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .send-btn:disabled {
+            background-color: #a3a3a3;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 20px 0;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--text-secondary);
+            border-radius: 50%;
+            animation: typingAnimation 1.5s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingAnimation {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background-color: var(--bg-color);
+            border-radius: var(--radius);
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+            transform: translateY(20px);
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .modal-content {
+            padding: 24px;
+        }
+
+        .about-creator {
+            line-height: 1.8;
+        }
+
+        .creator-highlight {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .copyright {
+            padding: 16px 24px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .disclaimer {
+            font-size: 0.85rem;
+            color: #f56565;
+            margin-top: 16px;
+            padding: 12px;
+            background-color: rgba(245, 101, 101, 0.1);
+            border-radius: 6px;
+        }
+
+        /* Export Options */
+        .export-options {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .export-btn {
+            flex: 1;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .export-btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        /* Mobile Sidebar */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                width: 100%;
+                max-width: 320px;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .chat-header {
+                padding: 12px 16px;
+            }
+
+            .chat-messages {
+                padding: 16px;
+            }
+
+            .message {
+                gap: 12px;
+            }
+
+            .message-content {
+                max-width: 90%;
+            }
+
+            .legal-reference {
+                padding: 10px 12px;
+                margin: 10px 0;
+            }
+
+            .input-container {
+                padding: 16px;
+            }
+
+            .modal {
+                width: 95%;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .sidebar-overlay {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo-circle">
+                        <img src="ai.png" alt="Angiras Logo">
+                    </div>
+                    <div class="logo-text">Angiras</div>
+                </div>
+            </div>
+            
+            <div class="sidebar-content">
+                <button class="new-chat-btn" id="newChatBtn">
+                    <i class="fas fa-plus"></i>
+                    <span>New chat</span>
+                </button>
+                
+                <div class="chat-history">
+                    <div class="chat-history-title">Today</div>
+                    <div class="chat-history-list" id="chatHistory">
+                        <!-- Chat history items will be added here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="menu-item" id="darkModeToggle">
+                    <i class="fas fa-moon"></i>
+                    <span>Dark mode</span>
+                </div>
+                <div class="menu-item" id="exportChatBtn">
+                    <i class="fas fa-download"></i>
+                    <span>Export chat</span>
+                </div>
+                <div class="menu-item" id="aboutBtn">
+                    <i class="fas fa-user"></i>
+                    <span>About Krithik Khair</span>
+                </div>
+                <div class="copyright">
+                    <p>© 2025 Krithik Khair. All rights reserved.</p>
+                    <p class="disclaimer">The bot can make mistakes. Verify with official sources.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile sidebar overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        
+        <!-- Main Chat Area -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="chat-title">
+                    <span>Angiras - Human Rights Assistant</span>
+                </div>
+                <div style="width: 40px;"></div> <!-- Spacer for alignment -->
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <!-- Welcome message -->
+                <div class="message bot-message">
+                    <div class="message-avatar">
+                        <img src="ai.png" alt="Angiras">
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">
+                            <h3>Namaste, I am Angiras</h3>
+                            <p>Your dedicated assistant for understanding human rights as per the Indian Constitution and international standards.</p>
+                            <p>I am here to help you navigate the complex landscape of legal rights and constitutional provisions with clarity and precision.</p>
+                            
+                            <div class="legal-reference">
+                                <strong>My Capabilities:</strong> I can explain Fundamental Rights, analyze landmark cases, clarify legal procedures, and provide information about constitutional remedies.
+                            </div>
+                            
+                            <p><strong>You can ask me about:</strong></p>
+                            <ul>
+                                <li>Fundamental Rights (Articles 14-32)</li>
+                                <li>Directive Principles of State Policy</li>
+                                <li>Landmark Supreme Court judgments</li>
+                                <li>Legal procedures and constitutional remedies</li>
+                                <li>International human rights conventions</li>
+                            </ul>
+                            
+                            <p>Feel free to ask me anything about your rights or legal provisions.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        class="input-box" 
+                        id="messageInput" 
+                        placeholder="Ask about your rights..." 
+                        rows="1"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div class="modal-overlay" id="exportModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Export Chat</div>
+                <button class="modal-close" id="closeExportModal">&times;</button>
+            </div>
+            <div class="modal-content">
+                <p>Choose format to export your current conversation:</p>
+                <div class="export-options">
+                    <button class="export-btn" id="exportTxtBtn">
+                        <i class="fas fa-file-alt"></i> TXT
+                    </button>
+                    <button class="export-btn" id="exportPdfBtn">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>Exported content is for personal use only.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="aboutModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">About Krithik Khair</div>
+                <button class="modal-close" id="closeAboutModal">&times;</button>
+            </div>
+            <div class="modal-content">
+                <div class="about-creator">
+                    <p><span class="creator-highlight">Krithik Khair</span> is a passionate developer and legal technology enthusiast dedicated to making legal information accessible to everyone.</p>
+                    <p>With a background in both technology and legal studies, he created <span class="creator-highlight">Angiras</span> to empower citizens with knowledge about their constitutional rights.</p>
+                    <p>He believes that understanding one's rights is the first step toward justice and equality in society.</p>
+                    <p>This project combines intelligent assistance with comprehensive legal databases to provide accurate, easy-to-understand information about human rights.</p>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>© 2025 Krithik Khair. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Main Application
+        class AngirasBot {
+            constructor() {
+                this.constitutionalData = null;
+                this.chatHistory = [];
+                this.currentChatId = this.generateChatId();
+                this.isDarkMode = localStorage.getItem('darkMode') === 'true';
+                this.isTyping = false;
+                
+                this.init();
+            }
+            
+            async init() {
+                this.initElements();
+                this.initEventListeners();
+                this.applyDarkMode();
+                await this.loadConstitutionalData();
+                this.loadChatHistory();
+                
+                setTimeout(() => {
+                    document.getElementById('messageInput').focus();
+                }, 500);
+            }
+            
+            initElements() {
+                this.elements = {
+                    sidebar: document.getElementById('sidebar'),
+                    sidebarOverlay: document.getElementById('sidebarOverlay'),
+                    mobileMenuBtn: document.getElementById('mobileMenuBtn'),
+                    messageInput: document.getElementById('messageInput'),
+                    sendBtn: document.getElementById('sendBtn'),
+                    chatMessages: document.getElementById('chatMessages'),
+                    chatHistory: document.getElementById('chatHistory'),
+                    newChatBtn: document.getElementById('newChatBtn'),
+                    darkModeToggle: document.getElementById('darkModeToggle'),
+                    exportChatBtn: document.getElementById('exportChatBtn'),
+                    aboutBtn: document.getElementById('aboutBtn'),
+                    exportModal: document.getElementById('exportModal'),
+                    aboutModal: document.getElementById('aboutModal'),
+                    closeExportModal: document.getElementById('closeExportModal'),
+                    closeAboutModal: document.getElementById('closeAboutModal'),
+                    exportTxtBtn: document.getElementById('exportTxtBtn'),
+                    exportPdfBtn: document.getElementById('exportPdfBtn')
+                };
+            }
+            
+            initEventListeners() {
+                this.elements.mobileMenuBtn.addEventListener('click', () => {
+                    this.elements.sidebar.classList.add('active');
+                    this.elements.sidebarOverlay.classList.add('active');
+                });
+                
+                this.elements.sidebarOverlay.addEventListener('click', () => {
+                    this.elements.sidebar.classList.remove('active');
+                    this.elements.sidebarOverlay.classList.remove('active');
+                });
+                
+                this.elements.sendBtn.addEventListener('click', () => this.sendMessage());
+                
+                this.elements.messageInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                    
+                    this.autoResizeTextarea(e.target);
+                });
+                
+                this.elements.newChatBtn.addEventListener('click', () => this.startNewChat());
+                this.elements.darkModeToggle.addEventListener('click', () => this.toggleDarkMode());
+                
+                this.elements.exportChatBtn.addEventListener('click', () => {
+                    this.elements.exportModal.classList.add('active');
+                });
+                
+                this.elements.closeExportModal.addEventListener('click', () => {
+                    this.elements.exportModal.classList.remove('active');
+                });
+                
+                this.elements.exportTxtBtn.addEventListener('click', () => this.exportChat('txt'));
+                this.elements.exportPdfBtn.addEventListener('click', () => this.exportChat('pdf'));
+                
+                this.elements.aboutBtn.addEventListener('click', () => {
+                    this.elements.aboutModal.classList.add('active');
+                });
+                
+                this.elements.closeAboutModal.addEventListener('click', () => {
+                    this.elements.aboutModal.classList.remove('active');
+                });
+                
+                [this.elements.exportModal, this.elements.aboutModal].forEach(modal => {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            modal.classList.remove('active');
+                        }
+                    });
+                });
+            }
+            
+            async loadConstitutionalData() {
+                try {
+                    const response = await fetch('data.json.txt');
+                    if (response.ok) {
+                        this.constitutionalData = await response.json();
+                        console.log('Constitutional data loaded from data.json.txt');
+                        return;
+                    }
+                    console.warn('data.json.txt not found or invalid, using sample data.');
+                    await this.loadSampleData();
+                } catch (error) {
+                    console.error('Error loading constitutional data:', error);
+                    await this.loadSampleData();
+                }
+            }
+            
+            async loadSampleData() {
+                this.constitutionalData = {
+                    constitution: {
+                        parts: [
+                            {
+                                part: "Part III",
+                                title: "Fundamental Rights",
+                                articles: [
+                                    {
+                                        article: "Article 14",
+                                        title: "Equality before law",
+                                        text: "The State shall not deny to any person equality before the law or the equal protection of the laws within the territory of India.",
+                                        significance: "Prohibition of arbitrariness, Rule of Law",
+                                        category: "Right to Equality",
+                                        case_laws: [
+                                            "E.P. Royappa v. State of Tamil Nadu (1974)",
+                                            "Maneka Gandhi v. Union of India (1978)"
+                                        ]
+                                    },
+                                    {
+                                        article: "Article 21",
+                                        title: "Protection of life and personal liberty",
+                                        text: "No person shall be deprived of his life or personal liberty except according to procedure established by law.",
+                                        significance: "Most important fundamental right, basis for many derived rights",
+                                        expanded_rights: [
+                                            "Right to privacy",
+                                            "Right to education",
+                                            "Right to health",
+                                            "Right to clean environment"
+                                        ],
+                                        case_laws: [
+                                            "Maneka Gandhi v. Union of India (1978)",
+                                            "Justice K.S. Puttaswamy v. Union of India (2017)"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                };
+            }
+            
+            sendMessage() {
+                const input = this.elements.messageInput;
+                const message = input.value.trim();
+                
+                if (!message || this.isTyping) return;
+                
+                this.addMessage(message, 'user');
+                input.value = '';
+                this.autoResizeTextarea(input);
+                
+                this.elements.sendBtn.disabled = true;
+                this.isTyping = true;
+                
+                this.showTypingIndicator();
+                
+                setTimeout(() => {
+                    this.processUserMessage(message);
+                    this.hideTypingIndicator();
+                    this.elements.sendBtn.disabled = false;
+                    this.isTyping = false;
+                }, 1000 + Math.random() * 500);
+            }
+            
+            async processUserMessage(message) {
+                const lowerMessage = message.toLowerCase();
+                let response = '';
+                
+                if (this.isGreeting(lowerMessage)) {
+                    response = this.getGreetingResponse();
+                } else if (this.isHowAreYou(lowerMessage)) {
+                    response = this.getHowAreYouResponse();
+                } else if (this.isWhatCanYouDo(lowerMessage)) {
+                    response = this.getCapabilitiesResponse();
+                } else if (this.isThankYou(lowerMessage)) {
+                    response = this.getThankYouResponse();
+                } else if (this.isArticleQuery(lowerMessage)) {
+                    const articleNum = this.extractArticleNumber(lowerMessage);
+                    response = await this.getArticleInfo(articleNum);
+                } else if (lowerMessage.includes('right') || lowerMessage.includes('fundamental')) {
+                    response = await this.getRightsInfo(lowerMessage);
+                } else if (lowerMessage.includes('case') || lowerMessage.includes('judgment') || 
+                        lowerMessage.includes('supreme court')) {
+                    response = await this.getCaseLawInfo(lowerMessage);
+                } else {
+                    response = await this.getGeneralResponse(lowerMessage);
+                }
+                
+                this.addMessage(response, 'bot');
+            }
+            
+            isGreeting(message) {
+                const greetings = ['hello', 'hi', 'hey', 'namaste', 'namaskar', 'good morning', 'good afternoon', 'good evening'];
+                return greetings.some(greeting => message.includes(greeting));
+            }
+            
+            isHowAreYou(message) {
+                return message.includes('how are you') || message.includes('how do you do');
+            }
+            
+            isWhatCanYouDo(message) {
+                return message.includes('what can you do') || message.includes('capabilities') || 
+                       message.includes('help') || message.includes('features');
+            }
+            
+            isThankYou(message) {
+                return message.includes('thank') || message.includes('thanks') || message.includes('thank you');
+            }
+            
+            isArticleQuery(message) {
+                return /article\s+(\d+[a-z]?)/i.test(message) || /art\.?\s*(\d+[a-z]?)/i.test(message);
+            }
+            
+            extractArticleNumber(message) {
+                const match = message.match(/article\s+(\d+[a-z]?)/i) || message.match(/art\.?\s*(\d+[a-z]?)/i);
+                return match ? match[1].toUpperCase() : null;
+            }
+            
+            getGreetingResponse() {
+                const greetings = [
+                    "Namaste! I'm Angiras, your human rights assistant. How can I help you today?",
+                    "Hello! I'm Angiras, ready to help you understand your constitutional rights.",
+                    "Greetings! I'm Angiras, your guide to the Indian Constitution and human rights."
+                ];
+                return `<h3>${greetings[Math.floor(Math.random() * greetings.length)]}</h3>`;
+            }
+            
+            getHowAreYouResponse() {
+                const responses = [
+                    "I'm functioning optimally, thank you for asking. Ready to assist you with any questions about human rights.",
+                    "I'm doing well, always prepared to help you navigate constitutional provisions and legal rights.",
+                    "All systems are operational. I'm here to provide you with accurate information about your rights."
+                ];
+                return `<p>${responses[Math.floor(Math.random() * responses.length)]}</p>`;
+            }
+            
+            getCapabilitiesResponse() {
+                return `<h3>My Capabilities</h3>
+                <p>As Angiras, I can assist you with:</p>
+                
+                <p><strong>Constitutional Knowledge:</strong></p>
+                <ul>
+                    <li>Explain Fundamental Rights (Articles 14-32)</li>
+                    <li>Clarify Directive Principles of State Policy</li>
+                    <li>Discuss constitutional amendments and their impact</li>
+                </ul>
+                
+                <p><strong>Legal Information:</strong></p>
+                <ul>
+                    <li>Analyze landmark Supreme Court judgments</li>
+                    <li>Explain legal procedures and remedies</li>
+                    <li>Provide information about writ jurisdictions</li>
+                </ul>
+                
+                <p><strong>Rights Education:</strong></p>
+                <ul>
+                    <li>Explain specific rights in detail</li>
+                    <li>Provide historical context of rights</li>
+                    <li>Compare Indian rights with international standards</li>
+                </ul>
+                
+                <div class="legal-reference">
+                    <strong>Example Queries:</strong> "Explain Article 21", "What are my rights if arrested?", "Tell me about the right to privacy"
+                </div>`;
+            }
+            
+            getThankYouResponse() {
+                const responses = [
+                    "You're welcome. It's my purpose to help you understand your rights.",
+                    "My pleasure. Feel free to ask if you need more information.",
+                    "Thank you for using Angiras. Remember, knowing your rights empowers you."
+                ];
+                return `<p>${responses[Math.floor(Math.random() * responses.length)]}</p>`;
+            }
+            
+            async getArticleInfo(articleNum) {
+                if (!this.constitutionalData) {
+                    return "I'm still loading the constitutional data. Please try again in a moment.";
+                }
+                
+                const articles = this.constitutionalData.constitution?.parts?.[0]?.articles || [];
+                const article = articles.find(a => 
+                    a.article.toLowerCase().includes(`article ${articleNum.toLowerCase()}`) ||
+                    a.article.toLowerCase().includes(`art. ${articleNum.toLowerCase()}`)
+                );
+                
+                if (article) {
+                    let response = `<h3>${article.article}: ${article.title}</h3>`;
+                    response += `<p>${article.text}</p>`;
+                    
+                    if (article.significance) {
+                        response += `<p><strong>Significance:</strong> ${article.significance}</p>`;
+                    }
+                    
+                    if (article.expanded_rights && article.expanded_rights.length > 0) {
+                        response += `<p><strong>Expanded Rights Include:</strong></p><ul>`;
+                        article.expanded_rights.forEach(right => {
+                            response += `<li>${right}</li>`;
+                        });
+                        response += `</ul>`;
+                    }
+                    
+                    if (article.case_laws && article.case_laws.length > 0) {
+                        response += `<div class="case-law-box">`;
+                        response += `<div class="case-law-title">Landmark Cases:</div>`;
+                        article.case_laws.forEach(caseLaw => {
+                            response += `<div>• ${caseLaw}</div>`;
+                        });
+                        response += `</div>`;
+                    }
+                    
+                    response += `<div class="legal-reference">
+                        <strong>Legal Reference:</strong> Constitution of India, ${article.article}
+                    </div>`;
+                    
+                    return response;
+                } else {
+                    return `I couldn't find specific information about Article ${articleNum}. ` +
+                           `Try asking about Article 14 (Equality), Article 21 (Life and Liberty), ` +
+                           `or Article 32 (Constitutional Remedies).`;
+                }
+            }
+            
+            async getRightsInfo(query) {
+                if (!this.constitutionalData) {
+                    return "I'm still loading the constitutional data. Please try again in a moment.";
+                }
+                
+                let response = `<h3>Fundamental Rights in Indian Constitution</h3>`;
+                response += `<p>The Constitution of India guarantees several Fundamental Rights under Part III (Articles 12-35):</p>`;
+                
+                const articles = this.constitutionalData.constitution?.parts?.[0]?.articles || [];
+                const relevantArticles = articles.slice(0, 6);
+                
+                response += `<ul>`;
+                relevantArticles.forEach(article => {
+                    response += `<li><strong>${article.article}:</strong> ${article.title}</li>`;
+                });
+                response += `</ul>`;
+                
+                response += `<p><strong>Categories of Fundamental Rights:</strong></p>`;
+                response += `<ul>`;
+                response += `<li>Right to Equality (Articles 14-18)</li>`;
+                response += `<li>Right to Freedom (Articles 19-22)</li>`;
+                response += `<li>Right against Exploitation (Articles 23-24)</li>`;
+                response += `<li>Right to Freedom of Religion (Articles 25-28)</li>`;
+                response += `<li>Cultural and Educational Rights (Articles 29-30)</li>`;
+                response += `<li>Right to Constitutional Remedies (Article 32)</li>`;
+                response += `</ul>`;
+                
+                response += `<div class="legal-reference">
+                    <strong>Note:</strong> These rights are justiciable and can be enforced through courts.
+                    Article 32 gives you the right to approach the Supreme Court directly for violation of Fundamental Rights.
+                </div>`;
+                
+                return response;
+            }
+            
+            async getCaseLawInfo(query) {
+                const caseLaws = [
+                    {
+                        name: "Maneka Gandhi v. Union of India (1978)",
+                        significance: "Expanded Article 21 - 'procedure must be fair, just and reasonable'",
+                        impact: "Transformed Indian constitutional law, introduced due process"
+                    },
+                    {
+                        name: "Kesavananda Bharati v. State of Kerala (1973)",
+                        significance: "Established Basic Structure Doctrine",
+                        impact: "Limited Parliament's power to amend Constitution"
+                    },
+                    {
+                        name: "Justice K.S. Puttaswamy v. Union of India (2017)",
+                        significance: "Right to Privacy as fundamental right under Article 21",
+                        impact: "Basis for striking down Section 377, Aadhaar safeguards"
+                    },
+                    {
+                        name: "Indra Sawhney v. Union of India (1992)",
+                        significance: "Reservation limits (50% ceiling), creamy layer exclusion",
+                        impact: "Shaped India's reservation policy"
+                    }
+                ];
+                
+                let response = `<h3>Landmark Supreme Court Cases on Human Rights</h3>`;
+                response += `<p>Here are some landmark cases that shaped human rights jurisprudence in India:</p>`;
+                
+                caseLaws.forEach(caseLaw => {
+                    response += `<div class="case-law-box">`;
+                    response += `<div class="case-law-title">${caseLaw.name}</div>`;
+                    response += `<p><strong>Significance:</strong> ${caseLaw.significance}</p>`;
+                    response += `<p><strong>Impact:</strong> ${caseLaw.impact}</p>`;
+                    response += `</div>`;
+                });
+                
+                response += `<div class="legal-reference">
+                    These cases demonstrate how the Supreme Court has expanded and protected fundamental rights through judicial interpretation.
+                </div>`;
+                
+                return response;
+            }
+            
+            async getGeneralResponse(query) {
+                if (query.includes('arrest') || query.includes('police') || query.includes('detention')) {
+                    return this.getArrestRightsInfo();
+                } else if (query.includes('privacy') || query.includes('data')) {
+                    return this.getPrivacyRightsInfo();
+                } else if (query.includes('equality') || query.includes('discriminate')) {
+                    return this.getEqualityRightsInfo();
+                } else if (query.includes('education') || query.includes('school')) {
+                    return this.getEducationRightsInfo();
+                } else {
+                    return this.getDefaultResponse();
+                }
+            }
+            
+            getArrestRightsInfo() {
+                return `<h3>Rights if Arrested or Detained</h3>
+                <p><strong>Article 22 of the Indian Constitution</strong> provides these protections:</p>
+                <ul>
+                    <li><strong>Right to be informed:</strong> You must be told why you're being arrested</li>
+                    <li><strong>Right to lawyer:</strong> You can consult a lawyer of your choice</li>
+                    <li><strong>24-hour rule:</strong> Must be produced before magistrate within 24 hours</li>
+                    <li><strong>No self-incrimination:</strong> You cannot be forced to testify against yourself</li>
+                </ul>
+                
+                <p><strong>Additional Rights from Criminal Procedure Code:</strong></p>
+                <ul>
+                    <li>Right to bail for bailable offenses</li>
+                    <li>Right to medical examination</li>
+                    <li>Right to inform family/friends about arrest</li>
+                    <li>Protection against torture or cruel treatment</li>
+                </ul>
+                
+                <div class="case-law-box">
+                    <div class="case-law-title">D.K. Basu v. State of West Bengal (1997)</div>
+                    <p>The Supreme Court laid down guidelines for arrest and detention to prevent custodial violence.</p>
+                </div>
+                
+                <div class="legal-reference">
+                    <strong>Remember:</strong> If arrested, stay calm, don't resist, and assert your rights politely. Ask for a lawyer immediately.
+                </div>`;
+            }
+            
+            getPrivacyRightsInfo() {
+                return `<h3>Right to Privacy in India</h3>
+                <p><strong>Legal Status:</strong> Fundamental Right under Article 21 (Right to Life)</p>
+                
+                <p><strong>Established in:</strong> Justice K.S. Puttaswamy v. Union of India (2017)</p>
+                
+                <p><strong>Key Aspects:</strong></p>
+                <ul>
+                    <li>Privacy is intrinsic to life and personal liberty</li>
+                    <li>Includes bodily autonomy, informational privacy, and privacy of choice</li>
+                    <li>Not absolute - can be restricted for legitimate state interests</li>
+                    <li>Any invasion must pass the test of legality, need, and proportionality</li>
+                </ul>
+                
+                <p><strong>Related Laws:</strong></p>
+                <ul>
+                    <li>Information Technology Act, 2000</li>
+                    <li>Personal Data Protection Bill (proposed)</li>
+                    <li>Aadhaar Act, 2016 (with privacy safeguards)</li>
+                </ul>
+                
+                <div class="legal-reference">
+                    <strong>Impact:</strong> This judgment led to decriminalization of homosexuality (Navtej Singh Johar case) and stronger data protection requirements.
+                </div>`;
+            }
+            
+            getEqualityRightsInfo() {
+                return `<h3>Right to Equality (Articles 14-18)</h3>
+                <p><strong>Article 14:</strong> Equality before law and equal protection of laws</p>
+                <p><strong>Article 15:</strong> Prohibition of discrimination based on religion, race, caste, sex, place of birth</p>
+                <p><strong>Article 16:</strong> Equality of opportunity in public employment</p>
+                <p><strong>Article 17:</strong> Abolition of untouchability</p>
+                <p><strong>Article 18:</strong> Abolition of titles</p>
+                
+                <div class="case-law-box">
+                    <div class="case-law-title">E.P. Royappa v. State of Tamil Nadu (1974)</div>
+                    <p>Equality is a dynamic concept with many aspects. Arbitrariness is antithetical to equality.</p>
+                </div>
+                
+                <div class="case-law-box">
+                    <div class="case-law-title">Indra Sawhney v. Union of India (1992)</div>
+                    <p>Upheld reservation for backward classes with 50% ceiling and creamy layer exclusion.</p>
+                </div>
+                
+                <div class="legal-reference">
+                    <strong>Note:</strong> The Constitution permits reasonable classification for achieving substantive equality. Special provisions for women, children, and backward classes are allowed.
+                </div>`;
+            }
+            
+            getEducationRightsInfo() {
+                return `<h3>Right to Education in India</h3>
+                <p><strong>Constitutional Provisions:</strong></p>
+                <ul>
+                    <li><strong>Article 21A:</strong> Free and compulsory education for children 6-14 years</li>
+                    <li><strong>Article 45:</strong> Early childhood care and education (Directive Principle)</li>
+                    <li><strong>Article 51A(k):</strong> Fundamental duty of parents to educate children</li>
+                </ul>
+                
+                <p><strong>Right of Children to Free and Compulsory Education Act, 2009:</strong></p>
+                <ul>
+                    <li>25% reservation in private schools for disadvantaged groups</li>
+                    <li>No detention policy (recently modified)</li>
+                    <li>No capitation fees or screening procedures</li>
+                    <li>Teacher-student ratio requirements</li>
+                </ul>
+                
+                <div class="case-law-box">
+                    <div class="case-law-title">Unni Krishnan v. State of Andhra Pradesh (1993)</div>
+                    <p>Recognized right to education as implicit in right to life under Article 21.</p>
+                </div>
+                
+                <div class="legal-reference">
+                    <strong>Current Status:</strong> While primary education is a fundamental right, higher education accessibility remains a challenge with ongoing debates about reservations and fees.
+                </div>`;
+            }
+            
+            getDefaultResponse() {
+                return `<h3>How I Can Assist You</h3>
+                <p>I can explain various aspects of human rights and constitutional law in India. Try asking about:</p>
+                
+                <p><strong>Specific Rights:</strong></p>
+                <ul>
+                    <li>"What is freedom of speech?"</li>
+                    <li>"Explain right to constitutional remedies"</li>
+                    <li>"What are minority rights?"</li>
+                </ul>
+                
+                <p><strong>Legal Concepts:</strong></p>
+                <ul>
+                    <li>"What is judicial review?"</li>
+                    <li>"Explain the Basic Structure Doctrine"</li>
+                    <li>"What are writs and how to file them?"</li>
+                </ul>
+                
+                <p><strong>Social Issues:</strong></p>
+                <ul>
+                    <li>"What rights do LGBTQ+ people have?"</li>
+                    <li>"Explain women's rights in India"</li>
+                    <li>"What are disability rights?"</li>
+                </ul>
+                
+                <div class="legal-reference">
+                    You can also ask about specific Articles (14, 19, 21, etc.) or landmark cases.
+                </div>`;
+            }
+            
+            addMessage(content, sender) {
+                const chatMessages = this.elements.chatMessages;
+                const typingIndicator = document.getElementById('typingIndicator');
+                
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                
+                if (sender === 'bot') {
+                    const img = document.createElement('img');
+                    img.src = 'ai.png';
+                    img.alt = 'Angiras';
+                    avatar.appendChild(img);
+                }
+                // for user, avatar div exists but is hidden via CSS
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                
+                if (sender === 'bot' && content.includes('<')) {
+                    contentDiv.innerHTML = content;
+                } else {
+                    contentDiv.textContent = content;
+                }
+                
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(contentDiv);
+                
+                chatMessages.appendChild(messageDiv);
+                
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                if (sender === 'user') {
+                    this.chatHistory.push({
+                        sender: 'user',
+                        content: content,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    this.updateChatHistory();
+                }
+            }
+            
+            showTypingIndicator() {
+                const chatMessages = this.elements.chatMessages;
+                
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'message bot-message';
+                typingDiv.id = 'typingIndicator';
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                
+                const img = document.createElement('img');
+                img.src = 'ai.png';
+                img.alt = 'Angiras';
+                avatar.appendChild(img);
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                
+                const typingIndicator = document.createElement('div');
+                typingIndicator.className = 'typing-indicator';
+                
+                for (let i = 0; i < 3; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'typing-dot';
+                    typingIndicator.appendChild(dot);
+                }
+                
+                contentDiv.appendChild(typingIndicator);
+                typingDiv.appendChild(avatar);
+                typingDiv.appendChild(contentDiv);
+                
+                chatMessages.appendChild(typingDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            hideTypingIndicator() {
+                const typingIndicator = document.getElementById('typingIndicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+            
+            autoResizeTextarea(textarea) {
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+            }
+            
+            startNewChat() {
+                this.currentChatId = this.generateChatId();
+                this.elements.chatMessages.innerHTML = '';
+                this.addWelcomeMessage();
+                this.updateChatHistory();
+                
+                this.elements.sidebar.classList.remove('active');
+                this.elements.sidebarOverlay.classList.remove('active');
+                
+                this.elements.messageInput.focus();
+            }
+            
+            addWelcomeMessage() {
+                const welcomeMessage = `<h3>Namaste, I am Angiras</h3>
+                <p>Your dedicated assistant for understanding human rights as per the Indian Constitution and international standards.</p>
+                <p>I am here to help you navigate the complex landscape of legal rights and constitutional provisions with clarity and precision.</p>
+                
+                <div class="legal-reference">
+                    <strong>My Capabilities:</strong> I can explain Fundamental Rights, analyze landmark cases, clarify legal procedures, and provide information about constitutional remedies.
+                </div>
+                
+                <p><strong>You can ask me about:</strong></p>
+                <ul>
+                    <li>Fundamental Rights (Articles 14-32)</li>
+                    <li>Directive Principles of State Policy</li>
+                    <li>Landmark Supreme Court judgments</li>
+                    <li>Legal procedures and constitutional remedies</li>
+                    <li>International human rights conventions</li>
+                </ul>
+                
+                <p>Feel free to ask me anything about your rights or legal provisions.</p>`;
+                
+                this.addMessage(welcomeMessage, 'bot');
+            }
+            
+            toggleDarkMode() {
+                this.isDarkMode = !this.isDarkMode;
+                localStorage.setItem('darkMode', this.isDarkMode);
+                this.applyDarkMode();
+            }
+            
+            applyDarkMode() {
+                if (this.isDarkMode) {
+                    document.body.classList.add('dark-mode');
+                    this.elements.darkModeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Light mode</span>';
+                } else {
+                    document.body.classList.remove('dark-mode');
+                    this.elements.darkModeToggle.innerHTML = '<i class="fas fa-moon"></i><span>Dark mode</span>';
+                }
+            }
+            
+            generateChatId() {
+                return 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            }
+            
+            loadChatHistory() {
+                const savedHistory = localStorage.getItem('chatHistory');
+                if (savedHistory) {
+                    this.chatHistory = JSON.parse(savedHistory);
+                    this.updateChatHistory();
+                }
+            }
+            
+            updateChatHistory() {
+                const historyList = this.elements.chatHistory;
+                historyList.innerHTML = '';
+                
+                const chatItem = document.createElement('div');
+                chatItem.className = 'chat-history-item active';
+                chatItem.innerHTML = `
+                    <i class="fas fa-message"></i>
+                    <span>New Conversation</span>
+                `;
+                chatItem.addEventListener('click', () => {});
+                
+                historyList.appendChild(chatItem);
+                
+                localStorage.setItem('chatHistory', JSON.stringify(this.chatHistory));
+            }
+            
+            exportChat(format) {
+                let content = `Angiras - Human Rights Assistant\n`;
+                content += `Conversation Record\n`;
+                content += `Generated: ${new Date().toLocaleString()}\n`;
+                content += `================================\n\n`;
+                
+                const messages = this.elements.chatMessages.querySelectorAll('.message');
+                messages.forEach(msg => {
+                    const isUser = msg.classList.contains('user-message');
+                    const sender = isUser ? 'You' : 'Angiras';
+                    const text = msg.querySelector('.message-content').textContent || 
+                                msg.querySelector('.message-content').innerText;
+                    
+                    content += `${sender}: ${text}\n\n`;
+                });
+                
+                if (format === 'txt') {
+                    this.downloadFile(content, 'angiras-conversation.txt', 'text/plain');
+                } else if (format === 'pdf') {
+                    this.downloadFile(content, 'angiras-conversation.pdf', 'text/plain');
+                    alert('PDF export would require additional libraries. For now, TXT export is available.');
+                }
+                
+                this.elements.exportModal.classList.remove('active');
+            }
+            
+            downloadFile(content, filename, mimeType) {
+                const blob = new Blob([content], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            window.angirasBot = new AngirasBot();
+        });
+    </script>
+</body>
+</html>
